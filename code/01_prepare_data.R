@@ -1,6 +1,20 @@
 
-load(file.path("Data", "Rdata", "data_analysis.Rdata")) ## dss_clinical, maindts, cri_final, cri0, cri48, vital_final, vital0, vital48
-load(file.path("Data", "Rdata", "data_analysis_final.Rdata")) ## final, final12, final24, final36
+
+# setup -------------------------------------------------------------------
+
+library(tidyverse)
+library(readxl)
+library(lubridate)
+library(Hmisc)
+#library(Lmisc)
+
+# load functions
+source("functions.R")
+
+data_path <- file.path("V:", "BIOSTATISTICS", "ClinicalProjectsNonRCT", "CRI_Dengue", "Data", "Data")
+
+load(file.path(data_path, "Rdata", "data_analysis.Rdata")) ## dss_clinical, maindts, cri_final, cri0, cri48, vital_final, vital0, vital48
+load(file.path(data_path, "Rdata", "data_analysis_final.Rdata")) ## final, final12, final24, final36
 
 
 # old analysis ------------------------------------------------------------

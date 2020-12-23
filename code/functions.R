@@ -287,3 +287,110 @@ get_cor2 <- function(x, y, id = "StudyNo", data, method = "pearson", nBoot = 100
 
   return(rho)
 }
+
+
+# to identify number of pp <= 20mmHg --------------------------------------
+
+tmp_func <- function(x){
+  tmp <- filter(vital_final, (StudyNo == x$StudyNo) & (t >= x$tstart) & (t <= x$tstop0))
+  output <- sum(tmp$PP <= 20)
+  return(output)
+}
+
+# to identify stop of the shock episode -----------------------------------
+
+get_tstop <- function(x){
+  tmp1 <- filter(vital_final, (StudyNo == x$StudyNo) & (t >= x$tstart) & !is.na(PP)) %>%
+    arrange(t)
+
+  tmp2 <- sapply(1:nrow(tmp1), function(i){
+    tmp_20 <- sum(tmp1$PP[tmp1$t >= (tmp1$t[i] - 6) & (tmp1$t <= tmp1$t[i])] <= 20)
+    return(ifelse(tmp_20 > 0, 1, 0))
+  })
+
+  if (any(tmp2 == 0)) {
+    output <- min(tmp1$t[tmp2 == 0 & tmp1$t >= (x$tstart + 6)])
+  } else {
+    output <- NA
+  }
+  return(output)
+}
+
+get_tstop2 <- function(x){
+  tmp1 <- filter(vital_final, (StudyNo == x$StudyNo) & (t >= x$tstart) & !is.na(PP)) %>%
+    arrange(t)
+
+  tmp2 <- sapply(1:nrow(tmp1), function(i){
+    tmp_20 <- sum(tmp1$PP[tmp1$t >= (tmp1$t[i] - 6) & (tmp1$t <= tmp1$t[i])] <= 20)
+    return(ifelse(tmp_20 > 0, 1, 0))
+  })
+
+  if (any(tmp2 == 0)) {
+    output <- min(tmp1$t[tmp2 == 0 & tmp1$t >= (x$tstart + 6)])
+  } else {
+    output <- NA
+  }
+  return(output)
+}
+
+
+# to get landmark points --------------------------------------------------
+
+get_LM <- function(x, LMs) {
+  LM <- LMs[LMs >= x$tstart & LMs <= x$tstop]
+  if (length(LM) == 0) {
+    return(NA)
+  } else {
+    return(LM)
+  }
+}
+
+# to get summary of CRI values --------------------------------------------
+
+get_CRI <- function(id, tp, cri_dat = cridata, tol = 15/60, type = c("current", "slope")) {
+  if (length(type) > 1) type <- "current"
+  tmp <- subset(cri_dat, StudyNo == id & (t <= tp) & (t >= (tp - tol))) %>%
+    arrange(t)
+  if (nrow(tmp) == 0) {
+    output <- cbind(CRI = NA, CRI_t = NA)
+  } else {
+    if (type == "current") {
+      output <- cbind(CRI = last(tmp$CRI),
+                      CRI_t = last(tmp$t))
+    } else {
+      if (type == "slope") {
+        if (nrow(tmp) < 3) {
+          output <- cbind(CRI = NA, CRI_t = NA)
+        } else {
+          output <- cbind(CRI = coef(lm(tmp$CRI ~ tmp$t))[2],
+                          CRI_t = last(tmp$t))
+        }
+      }
+    }
+
+  }
+  return(output)
+}
+
+get_CRI2 <- function(id, tp, cri_dat = cridata, tol = 15/60, type = c("current", "slope")) {
+  if (length(type) > 1) type <- "current"
+  tmp <- subset(cri_dat, StudyNo == id & (t <= tp) & (t >= (tp - tol))) %>%
+    arrange(t)
+  if (nrow(tmp) == 0) {
+    output <- NA
+  } else {
+    if (type == "current") {
+      output <- last(tmp$CRI)
+    } else {
+      if (type == "slope") {
+        if (nrow(tmp) < 3) {
+          output <- NA
+        } else {
+          output <- coef(lm(tmp$CRI ~ tmp$t))[2]
+        }
+      }
+    }
+
+  }
+  return(output)
+}
